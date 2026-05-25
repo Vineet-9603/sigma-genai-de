@@ -1,15 +1,15 @@
 {
   "file": "queries/my_query4.sql",
-  "reviewed_at": "2026-05-25T16:24:04.938249",
-  "issues_found": 3,
+  "reviewed_at": "2026-05-25T18:59:40.724073",
+  "issues_found": 2,
   "review": {
     "issues": [
       {
         "severity": "Critical",
         "category": "Correctness",
-        "title": "Incorrect table used",
+        "title": "Incorrect table reference",
         "line": "1",
-        "problem": "The query is selecting from 'students' table instead of the intended 'sigma_analytics.dim_merchant' or 'sigma_analytics.fact_transactions' tables.",
+        "problem": "The query references a 'students' table which does not exist in the provided schema.",
         "fix": "SELECT merchant_name FROM sigma_analytics.dim_merchant LIMIT 5;"
       },
       {
@@ -19,17 +19,9 @@
         "line": "1",
         "problem": "The query lacks comments explaining its purpose or logic.",
         "fix": "-- Select top 5 merchant names\nSELECT merchant_name FROM sigma_analytics.dim_merchant LIMIT 5;"
-      },
-      {
-        "severity": "Low",
-        "category": "Readability",
-        "title": "Inconsistent naming",
-        "line": "1",
-        "problem": "The alias 'name' is used instead of 'merchant_name' which is the actual column name in the schema.",
-        "fix": "-- Select top 5 merchant names\nSELECT merchant_name FROM sigma_analytics.dim_merchant LIMIT 5;"
       }
     ],
-    "corrected_sql": "-- Select top 5 merchant names\nSELECT merchant_name FROM sigma_analytics.dim_merchant LIMIT 5;",
-    "summary": "The query was using an incorrect table and lacked comments and consistent naming. Fixed the table and added comments for readability."
+    "corrected_sql": "-- Select top 5 merchant names\nSELECT merchant_name FROM sigma_analytics.dim_merchant ORDER BY merchant_name LIMIT 5;",
+    "summary": "The query had a critical correctness issue by referencing a non-existent table and lacked readability due to missing comments."
   }
 }
