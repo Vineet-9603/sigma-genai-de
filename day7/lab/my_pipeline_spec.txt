@@ -1,0 +1,188 @@
+================================================================
+TEAM NEXUS · MARKETING ATTRIBUTION PIPELINE SPEC
+================================================================
+Team Members : Vineet Rana | Pawan Singh | Jignesh B | Challa Arun Kumar
+Scenario     : Sigma DataTech runs promotions via 3 channels: Email, SMS,
+               Push. Build a pipeline that reads transaction data + a
+               promotions CSV (promo_id, channel, discount_pct), joins them
+               on customer_id, calculates revenue_per_channel and
+               roi_per_channel, and writes a marketing_attribution Gold table.
+================================================================
+
+
+----------------------------------------------------------------
+OBJECTIVE
+----------------------------------------------------------------
+Build a Databricks Delta Lake pipeline that ingests daily transaction data
+and a promotions CSV (promo_id, channel, discount_pct), joins both on
+customer_id, computes revenue_per_channel and roi_per_channel per marketing
+channel (Email, SMS, Push), and writes the result to a marketing_attribution
+Gold Delta table.
+
+
+----------------------------------------------------------------
+DATA SOURCES
+----------------------------------------------------------------
+1. transactions_raw
+   Format       : Delta / Parquet
+   Approx rows  : ~500,000 rows/day
+   Key columns  : transaction_id, customer_id, amount, transaction_date
+
+2. promotions.csv
+   Format       : CSV (batch load, uploaded each day)
+   Approx rows  : ~10,000 rows/day
+   Key columns  : promo_id, customer_id, channel, discount_pct, promo_cost
+
+NOTE: promo_cost is an explicit column inside the promotions CSV.
+      It represents the marketing spend per promotion record.
+      It does NOT come from any separate table.
+
+
+----------------------------------------------------------------
+BRONZE LAYER
+----------------------------------------------------------------
+Purpose:
+  Raw ingestion of all source data with no transformations.
+
+Columns ingested from transactions_raw:
+  transaction_id, customer_id, amount, transaction_date
+
+Columns ingested from promotions.csv:
+  promo_id, customer_id, channel, discount_pct, promo_cost
+
+Metadata columns added at ingest:
+  ingestion_timestamp  --> current_timestamp()
+  source_file_name     --> input_file_name()
+  batch_id             --> UUID generated per run
+
+Partition strategy:
+  - transactions Bronze table  --> partitioned by transaction_date (daily)
+  - promotions CSV             --> loaded as full snapshot, no partitioning
+
+
+----------------------------------------------------------------
+SILVER LAYER
+----------------------------------------------------------------
+Purpose:
+  Clean, cast, deduplicate, and quality-gate the raw Bronze data.
+
+Exact type casts:
+  amount           --> CAST AS DOUBLE
+  discount_pct     --> CAST AS DOUBLE (expected range: 0.0 to 1.0)
+  promo_cost       --> CAST AS DOUBLE
+  transaction_date --> CAST AS DATE
+
+Filter conditions (rows that fail any filter are dropped):
+  - amount > 0
+  - discount_pct BETWEEN 0.0 AND 1.0
+  - channel IN ('Email', 'SMS', 'Push')
+  - transaction_id IS NOT NULL
+  - customer_id IS NOT NULL
+
+Deduplication key:
+  (transaction_id, customer_id) -- keep latest by ingestion_timestamp
+
+Quality halt thresholds:
+  - If null rate on customer_id  > 1.0% --> HALT pipeline, raise alert
+  - If invalid channel values    > 0.5% --> HALT pipeline, raise alert
+  - Bad rows written to: silver_quarantine.transactions_rejected
+  - All halts logged to: pipeline_audit_log (with batch_id + reason)
+
+
+----------------------------------------------------------------
+GOLD LAYER
+----------------------------------------------------------------
+Table name : marketing_attribution
+
+Key output columns:
+  channel                  -- marketing channel (Email / SMS / Push)
+  revenue_per_channel      -- total revenue attributed to that channel
+  promo_cost_per_channel   -- total promotion spend for that channel
+  roi_per_channel          -- return on investment for that channel
+  run_date                 -- the date this batch was processed
+
+Exact business rule formulas:
+  revenue_per_channel    = SUM(amount)      GROUP BY channel
+  promo_cost_per_channel = SUM(promo_cost)  GROUP BY channel
+  roi_per_channel        = (revenue_per_channel - promo_cost_per_channel)
+                           / promo_cost_per_channel
+
+Write mode:
+  MERGE (upsert) on (channel, run_date)
+  -- supports safe reruns without duplicate rows
+
+
+----------------------------------------------------------------
+ERROR HANDLING
+----------------------------------------------------------------
+Scenario 1 -- Promotions CSV missing at job start:
+  - Pipeline checks file existence using dbutils.fs.ls() before any read
+  - If file not found --> raise FileNotFoundError
+  - Log failure to pipeline_audit_log (batch_id, timestamp, reason)
+  - Send Slack / email alert immediately
+  - STOP job -- do NOT proceed with stale or missing data
+
+Scenario 2 -- Silver quality check fails:
+  - Bad rows are written to silver_quarantine.transactions_rejected
+  - Failure reason + row count logged to pipeline_audit_log with batch_id
+  - Gold layer execution is blocked immediately (not triggered)
+  - PagerDuty / Slack alert sent with batch_id and failure reason
+
+Debug runbook:
+  Step 1 --> SELECT * FROM pipeline_audit_log ORDER BY ts DESC
+             (find the failing batch_id and reason)
+  Step 2 --> SELECT * FROM silver_quarantine
+             WHERE batch_id = '<failing_batch_id>'
+             (inspect exactly which rows were bad)
+  Step 3 --> Trace bad rows back to the source
+             (check promotions.csv for wrong customer_id or invalid channel)
+  Step 4 --> Fix the source data, delete the bad partition, rerun the job
+
+Configurable thresholds (set in config.py):
+  NULL_RATE_HALT    = 0.01   (1.0% -- raise to relax, lower to tighten)
+  CHANNEL_ERR_HALT  = 0.005  (0.5% -- adjustable for new channel onboarding)
+
+
+----------------------------------------------------------------
+PERFORMANCE
+----------------------------------------------------------------
+Partition strategy:
+  - Gold table   --> partitioned by run_date (fast time-range queries)
+  - Silver table --> partitioned by transaction_date
+
+Broadcast join (critical optimisation):
+  - promotions.csv is small (~10,000 rows/day)
+  - transactions Silver is large (~500,000 rows/day)
+  - Use broadcast hint to avoid shuffle join:
+    SELECT /*+ BROADCAST(promo) */ * FROM transactions t
+    JOIN promotions promo ON t.customer_id = promo.customer_id
+  - This significantly reduces stage time and executor memory pressure
+
+Caching:
+  - Cache the promotions DataFrame in memory after CSV load if it is
+    reused across multiple Silver transformations in the same job run
+  - Use .cache() + .count() to materialise before the join
+
+
+----------------------------------------------------------------
+LLM-PROOF CHECK ANSWER
+----------------------------------------------------------------
+Question : What is promo_cost? Where does it come from -- the CSV
+           or a separate table?
+
+Answer   : promo_cost is the per-promotion marketing spend amount.
+           It comes directly from the promotions CSV as an explicit
+           column alongside discount_pct. It does NOT come from any
+           separate table. This is the source for promo_cost_per_channel
+           in the ROI formula.
+
+Key ROI formula (as required by evaluation rubric):
+  roi_per_channel = (revenue_per_channel - promo_cost_per_channel)
+                   / promo_cost_per_channel
+
+
+----------------------------------------------------------------
+VERDICT : SHIPS
+================================================================
+END OF SPEC -- Team Nexus · Marketing Attribution Pipeline
+================================================================
