@@ -1,0 +1,64 @@
+{
+  "CRITICAL": [
+    {
+      "name": "data_freshness_breach",
+      "condition": "Pipeline has not run in more than 24 hours",
+      "threshold": "24",
+      "message": "Data freshness alert: Pipeline has not run in more than 24 hours. Stale data is affecting financial reports.",
+      "recommended_action": "Investigate and restart the pipeline immediately."
+    },
+    {
+      "name": "data_quality_breach",
+      "condition": "Data quality percentage is below 99.9%",
+      "threshold": "99.9",
+      "message": "Data quality alert: Data quality percentage is below 99.9%. Erroneous financial reports and decision-making are possible.",
+      "recommended_action": "Investigate data quality issues and take corrective actions."
+    },
+    {
+      "name": "row_count_out_of_bounds",
+      "condition": "Row count is outside the bounds of 17 to 25",
+      "threshold": "17, 25",
+      "message": "Row count alert: Row count is outside the bounds of 17 to 25. Data completeness is affected.",
+      "recommended_action": "Investigate the cause of the row count being out of bounds."
+    }
+  ],
+  "WARNING": [
+    {
+      "name": "runtime_approaching_limit",
+      "condition": "Pipeline runtime is approaching the 120-minute limit",
+      "threshold": "120",
+      "message": "Runtime alert: Pipeline runtime is approaching the 120-minute limit. Dashboard update may be delayed.",
+      "recommended_action": "Monitor pipeline runtime and optimize if necessary."
+    },
+    {
+      "name": "data_quality_slightly_below_threshold",
+      "condition": "Data quality percentage is slightly below 99.9%",
+      "threshold": "99.85",
+      "message": "Data quality alert: Data quality percentage is slightly below 99.9%. Potential for erroneous reports exists.",
+      "recommended_action": "Investigate and address data quality issues."
+    },
+    {
+      "name": "merchant_failure_rate_spike",
+      "condition": "One merchant's failure rate spikes above 30%",
+      "threshold": "30",
+      "message": "Merchant failure alert: One merchant's failure rate has spiked above 30%.",
+      "recommended_action": "Investigate the cause of the failure rate spike for the affected merchant."
+    }
+  ],
+  "INFO": [
+    {
+      "name": "new_payment_method_detected",
+      "condition": "A new payment method is detected in the data",
+      "threshold": "N/A",
+      "message": "New payment method detected: A new payment method has been detected in the data.",
+      "recommended_action": "Log the new payment method for future reference."
+    },
+    {
+      "name": "row_count_near_bounds",
+      "condition": "Daily row count is near the bounds of 17 to 25",
+      "threshold": "N/A",
+      "message": "Row count alert: Daily row count is near the bounds of 17 to 25 but within limits.",
+      "recommended_action": "Monitor row count for any trends or issues."
+    }
+  ]
+}

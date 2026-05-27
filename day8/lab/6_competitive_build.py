@@ -482,16 +482,22 @@ into the test file so it runs without any imports from challenge_pipeline.
         )
         output = proc.stdout + proc.stderr
 
-        # Count tests that were collected and ran (passed or failed — not errors)
+        # Count tests that were collected and ran (passed or failed).
+        # Pytest dependency/import failures do not include " ERROR" test lines,
+        # so treat a non-zero return with no ran tests as one harness error.
         passed_count = output.count(" passed") + output.count(" PASSED")
         failed_count = output.count(" failed") + output.count(" FAILED")
-        error_count  = output.count(" error")
+        error_count  = output.lower().count(" error")
         ran          = passed_count + failed_count
+        if proc.returncode != 0 and ran == 0 and error_count == 0:
+            error_count = 1
 
         passed = ran >= 2
 
         status_str = green("PASS") if passed else red("FAIL")
         print(f"  pytest: {passed_count} passed, {failed_count} failed, {error_count} errors")
+        if "No module named pytest" in output:
+            print("  Hint: pytest is not installed for this Python. Run: python -m pip install pytest")
         print(f"  Result: [{status_str}]  (need ≥2 running tests, got {ran})\n")
 
         result = {
