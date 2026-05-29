@@ -34,8 +34,14 @@ desktop.ini
 *.docx
 ~$*
 
+# Student lab outputs — never commit trainer runs
+
+
 # Temporary
 *.tmp
 .pytest_cache/
 *.log
 node_modules/
+
+.vercel
+.env*

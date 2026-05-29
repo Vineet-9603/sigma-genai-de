@@ -1,9 +1,15 @@
 {
   "source_file": "pipeline_brain/generated_pipeline.py",
   "model_used": "amazon.nova-pro-v1:0",
+<<<<<<< HEAD
   "original_lines": 179,
   "hardened_lines": 211,
   "lines_added": 32,
+=======
+  "original_lines": 181,
+  "hardened_lines": 214,
+  "lines_added": 33,
+>>>>>>> upstream/main
   "improvements_added": [
     "try/except error handling added around pipeline stages",
     "idempotency: delete-partition-then-write pattern added",
@@ -11,7 +17,13 @@
     "Python logging module added (replaces print statements)",
     "partition pruning filter added to Parquet reads"
   ],
+<<<<<<< HEAD
   "tokens_in": 3451,
   "tokens_out": 2872,
   "generated_at": "2026-05-26T10:03:08.182778+00:00"
+=======
+  "tokens_in": 3661,
+  "tokens_out": 2884,
+  "generated_at": "2026-05-26T10:01:03.571774+00:00"
+>>>>>>> upstream/main
 }

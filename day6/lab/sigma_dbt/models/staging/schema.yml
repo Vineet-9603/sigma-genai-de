@@ -17,9 +17,19 @@ stg_fact_transactions:
         - accepted_values:
             values: ['COMPLETED', 'FAILED', 'PENDING']
     merchant_id:
+<<<<<<< HEAD
       description: "Foreign key referencing dim_merchant"
     customer_id:
       description: "Foreign key referencing dim_customer"
+=======
+      description: "Foreign key to dim_merchant"
+      tests:
+        - not_null
+    customer_id:
+      description: "Foreign key to dim_customer"
+      tests:
+        - not_null
+>>>>>>> upstream/main
     transaction_date:
       description: "Date of the transaction"
     payment_method:
@@ -58,9 +68,18 @@ stg_dim_customer:
     customer_name:
       description: "Name of the customer"
     email:
+<<<<<<< HEAD
       description: "Email address of the customer"
     tier:
       description: "Customer tier (GOLD, SILVER, BRONZE)"
+=======
+      description: "Email of the customer"
+    tier:
+      description: "Tier of the customer (GOLD, SILVER, BRONZE)"
+      tests:
+        - accepted_values:
+            values: ['GOLD', 'SILVER', 'BRONZE']
+>>>>>>> upstream/main
     signup_date:
       description: "Date when the customer signed up"
     city:

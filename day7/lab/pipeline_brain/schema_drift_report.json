@@ -2,8 +2,12 @@
   "simulation": {
     "drifted_columns_injected": {
       "payment_gateway": "string",
+<<<<<<< HEAD
       "discount_amount": "float",
       "refund_flag": "boolean"
+=======
+      "discount_amount": "float"
+>>>>>>> upstream/main
     },
     "description": "payment_gateway and discount_amount appeared in upstream CSV"
   },
@@ -31,12 +35,19 @@
     "source_file": "string",
     "pipeline_run_id": "string",
     "payment_gateway": "string",
+<<<<<<< HEAD
     "discount_amount": "float",
     "refund_flag": "boolean"
   },
   "new_columns_detected": [
     "discount_amount",
     "refund_flag",
+=======
+    "discount_amount": "float"
+  },
+  "new_columns_detected": [
+    "discount_amount",
+>>>>>>> upstream/main
     "payment_gateway"
   ],
   "removed_columns_detected": [],
@@ -54,6 +65,7 @@
     "source_file": "string",
     "pipeline_run_id": "string",
     "payment_gateway": "string",
+<<<<<<< HEAD
     "discount_amount": "float",
     "refund_flag": "boolean"
   },
@@ -61,4 +73,12 @@
   "tokens_in": 868,
   "tokens_out": 1428,
   "generated_at": "2026-05-26T10:33:52.545012+00:00"
+=======
+    "discount_amount": "float"
+  },
+  "model_used": "amazon.nova-lite-v1:0",
+  "tokens_in": 848,
+  "tokens_out": 1240,
+  "generated_at": "2026-05-26T10:35:17.618962+00:00"
+>>>>>>> upstream/main
 }
