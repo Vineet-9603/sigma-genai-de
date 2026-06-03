@@ -102,7 +102,7 @@ You have one hour to find what broke before the agents take over.
 ## The Three AI Layers
 
 ### Bedrock Multi-Agent Collaboration
-The supervisor and 6 sub-agents run entirely inside AWS Bedrock.
+The supervisor and 6 sub-agents run entirely in  Bedrock.
 No servers. No Docker. No EC2 for the agents.
 You configure them — AWS runs them.
 
